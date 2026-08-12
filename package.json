@@ -1,0 +1,32 @@
+{
+  "name": "teemo",
+  "version": "0.1.0",
+  "description": "Teemo —— 一个微型 Agent Harness",
+  "type": "module",
+  "bin": {
+    "teemo": "./src/cmd/teemo/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "tsx"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mec4dalton/teemo.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
+    "@larksuiteoapi/node-sdk": "^1.71.1",
+    "openai": "^6.49.0"
+  }
+}

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# 运行时产物：agent 以工作区身份跑时落盘的 trace（非源码）
+# 忽略任意位置的 .teemo/traces/（** 前缀匹配任意层级；含 / 的 pattern 默认只锚定根）
+**/.teemo/traces/
+
+# Plan Mode 工作流产物（claw 默认 planMode=true 时在任意 workDir 生成）
+# ** 匹配任意层级，覆盖 demo-workspace、agentops 的 workspace/ 等所有工作区
+**/PLAN.md
+**/TODO.md
