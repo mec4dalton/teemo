@@ -1,0 +1,9 @@
+{
+    "protocol": "openai",
+    "baseURL": "https://open.bigmodel.cn/api/coding/paas/v4",
+    "model": "glm-4.5-air",
+    "apiKey": "$ZHIPU_API_KEY",
+    "pricing": {
+        "glm-4.5-air": { "inputPrice": 0.15, "outputPrice": 0.15 }
+    }
+}

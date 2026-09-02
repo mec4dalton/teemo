@@ -9,6 +9,11 @@ import { RoleAssistant } from "@/schema/message.js";
 import { Session } from "@/context/session.js";
 import { reporterStorage } from "@/feishu/bot.js";
 import { FeishuReporter } from "@/feishu/reporter.js";
+import type { Price } from "@/config/schema.js";
+
+const PRICING: Record<string, Price> = {
+    "glm-4.5-air": { inputPrice: 0.15, outputPrice: 0.15 },
+};
 
 class FakeProvider implements LLMProvider {
     async generate(_m: Message[], _t: ToolDefinition[]): Promise<Message> {
@@ -47,7 +52,12 @@ describe("buildEngineFactory", () => {
     it("factory 按 session 产出 engine（CostTracker 绑 session）", () => {
         const provider = new FakeProvider();
         const registry = buildAgentOpsRegistry("/tmp");
-        const factory = buildEngineFactory(provider, "glm-4.5-air", registry);
+        const factory = buildEngineFactory(
+            provider,
+            "glm-4.5-air",
+            PRICING,
+            registry,
+        );
         const session = new Session("s1", "/tmp");
         const engine = factory(session);
         expect(engine).toBeDefined();

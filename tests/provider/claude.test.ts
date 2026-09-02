@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { ClaudeProvider } from "@/provider/claude.js";
 import type { Message } from "@/schema/message.js";
 
+const BASE_URL = "https://open.bigmodel.cn/api/anthropic";
+
 // mock fetch 返回预设 Anthropic Messages 响应 JSON
 function fakeFetch(responseBody: unknown) {
     return async () =>
@@ -38,6 +40,7 @@ const TOOL_USE_RESPONSE = {
 describe("ClaudeProvider", () => {
     it("generate 返回 text content + usage（mock fetch）", async () => {
         const p = new ClaudeProvider("glm-4.5-air", {
+            baseURL: BASE_URL,
             fetch: fakeFetch(TEXT_RESPONSE),
         });
         const result = await p.generate(
@@ -52,6 +55,7 @@ describe("ClaudeProvider", () => {
 
     it("generate 解析 tool_use block 为 toolCalls", async () => {
         const p = new ClaudeProvider("glm-4.5-air", {
+            baseURL: BASE_URL,
             fetch: fakeFetch(TOOL_USE_RESPONSE),
         });
         const result = await p.generate(
@@ -63,9 +67,10 @@ describe("ClaudeProvider", () => {
         expect(result.toolCalls![0].arguments).toEqual({ command: "ls" });
     });
 
-    it("缺 apiKey 且未注入 fetch 时 throw（P4）", () => {
-        delete process.env.ZHIPU_API_KEY;
-        expect(() => new ClaudeProvider("glm-4.5-air")).toThrow(/ZHIPU_API_KEY/);
+    it("缺 apiKey 且未注入 fetch 时 throw", () => {
+        expect(() =>
+            new ClaudeProvider("glm-4.5-air", { baseURL: BASE_URL }),
+        ).toThrow(/apiKey/);
     });
 
     it("1214：空 content 的 assistant 消息仍下发请求（不抛错，注意待实测）", async () => {
@@ -75,7 +80,7 @@ describe("ClaudeProvider", () => {
             capturedBody = JSON.parse(init!.body as string);
             return fakeFetch(TEXT_RESPONSE)();
         };
-        const p = new ClaudeProvider("glm-4.5-air", { fetch });
+        const p = new ClaudeProvider("glm-4.5-air", { baseURL: BASE_URL, fetch });
         await p.generate(
             [
                 { role: "user", content: "q" },

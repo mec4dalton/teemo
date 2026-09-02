@@ -11,6 +11,7 @@ import type {
 import { RoleSystem, RoleUser, RoleAssistant } from "../schema/message.js";
 
 export interface OpenAIProviderOptions {
+    baseURL: string;
     fetch?: typeof fetch;
     apiKey?: string;
 }
@@ -19,17 +20,17 @@ export class OpenAIProvider implements LLMProvider {
     private readonly client: OpenAI;
     private readonly model: string;
 
-    constructor(model: string, options?: OpenAIProviderOptions) {
-        const apiKey = options?.apiKey ?? process.env.ZHIPU_API_KEY ?? "";
-        if (!apiKey && !options?.fetch) {
-            throw new Error("请设置 ZHIPU_API_KEY 环境变量");
+    constructor(model: string, options: OpenAIProviderOptions) {
+        const apiKey = options.apiKey ?? "";
+        if (!apiKey && !options.fetch) {
+            throw new Error("缺少 apiKey（请在配置文件中设置或用 $ENV 引用）");
         }
         this.model = model;
         this.client = new OpenAI({
             apiKey,
-            // 新 baseURL，无 trailing slash（SDK 自行拼 /chat/completions）
-            baseURL: "https://open.bigmodel.cn/api/coding/paas/v4",
-            fetch: options?.fetch as never,
+            // baseURL 无 trailing slash（SDK 自行拼 /chat/completions）
+            baseURL: options.baseURL,
+            fetch: options.fetch as never,
         });
     }
 

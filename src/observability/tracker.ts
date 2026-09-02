@@ -1,24 +1,16 @@
 // 可观测性层 - 计费装饰器
-// 装饰 LLMProvider，按 PricingModel 算花费写入 Session.recordUsage
+// 装饰 LLMProvider，按注入的 pricing 表算花费写入 Session.recordUsage
 
 import type { LLMProvider } from "../provider/interface.js";
 import type { Message, ToolDefinition } from "../schema/message.js";
 import type { Session } from "../context/session.js";
-
-interface Price {
-    inputPrice: number;
-    outputPrice: number;
-}
-
-// 价格表：元/百万 token
-export const PRICING_MODEL: Record<string, Price> = {
-    "glm-4.5-air": { inputPrice: 0.15, outputPrice: 0.15 },
-};
+import type { Price } from "../config/schema.js";
 
 export class CostTracker implements LLMProvider {
     constructor(
         private readonly next: LLMProvider,
         private readonly modelName: string,
+        private readonly pricing: Record<string, Price>,
         private readonly session: Session | null,
     ) {}
 
@@ -34,7 +26,7 @@ export class CostTracker implements LLMProvider {
     }
 
     private recordCost(promptTokens: number, completionTokens: number): void {
-        const price = PRICING_MODEL[this.modelName];
+        const price = this.pricing[this.modelName];
         if (!price) return;
         const cost =
             (promptTokens * price.inputPrice +

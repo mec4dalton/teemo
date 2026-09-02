@@ -17,6 +17,7 @@ import { ReadFileTool } from "../tools/read_file.js";
 import { WriteFileTool } from "../tools/write_file.js";
 import { EditFileTool } from "../tools/edit_file.js";
 import { BashTool } from "../tools/bash.js";
+import type { Price } from "../config/schema.js";
 
 const execAsync = promisify(exec);
 
@@ -40,6 +41,7 @@ export class BenchmarkRunner {
     constructor(
         private readonly modelName: string,
         private readonly provider: LLMProvider,
+        private readonly pricing: Record<string, Price>,
     ) {}
 
     async runSuite(testcases: TestCase[]): Promise<TestResult[]> {
@@ -112,7 +114,7 @@ export class BenchmarkRunner {
         const session = new Session(tc.id, workDir);
         session.append({ role: RoleUser, content: tc.taskPrompt });
         const registry = this.buildRegistry(workDir);
-        const tracked = new CostTracker(this.provider, this.modelName, session);
+        const tracked = new CostTracker(this.provider, this.modelName, this.pricing, session);
         const engine = new AgentEngine(tracked, registry, false, false);
         await engine.run(session, null);
         return session;

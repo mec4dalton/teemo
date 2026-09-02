@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { OpenAIProvider } from "@/provider/openai.js";
 import type { Message } from "@/schema/message.js";
+
+const BASE_URL = "https://open.bigmodel.cn/api/coding/paas/v4";
 
 function fakeFetch(responseBody: unknown) {
     return async () =>
@@ -38,18 +40,10 @@ const TOOL_RESPONSE = {
 };
 
 describe("OpenAIProvider", () => {
-    beforeEach(() => {
-        // openai SDK 构造期守卫要求 apiKey 非空（不认 fetch 注入）；
-        // mock 测试设 env key 让 SDK 接受构造，真实请求被 fetch 拦截
-        process.env.ZHIPU_API_KEY = "test-key";
-    });
-
-    afterEach(() => {
-        delete process.env.ZHIPU_API_KEY;
-    });
-
     it("generate 返回 text content + usage（mock fetch）", async () => {
         const p = new OpenAIProvider("glm-4.5-air", {
+            baseURL: BASE_URL,
+            apiKey: "sdk-key",
             fetch: fakeFetch(TEXT_RESPONSE),
         });
         const result = await p.generate(
@@ -62,6 +56,8 @@ describe("OpenAIProvider", () => {
 
     it("generate 解析 tool_calls 为 toolCalls（arguments 为 JSON 字符串）", async () => {
         const p = new OpenAIProvider("glm-4.5-air", {
+            baseURL: BASE_URL,
+            apiKey: "sdk-key",
             fetch: fakeFetch(TOOL_RESPONSE),
         });
         const result = await p.generate(
@@ -73,18 +69,23 @@ describe("OpenAIProvider", () => {
         expect(result.toolCalls![0].arguments).toEqual({ command: "ls" });
     });
 
-    it("缺 apiKey 且未注入 fetch 时 throw（P4）", () => {
-        delete process.env.ZHIPU_API_KEY; // 本测试删 env（beforeEach 已设）
-        expect(() => new OpenAIProvider("glm-4.5-air")).toThrow(/ZHIPU_API_KEY/);
+    it("缺 apiKey 且未注入 fetch 时 throw", () => {
+        expect(() =>
+            new OpenAIProvider("glm-4.5-air", { baseURL: BASE_URL }),
+        ).toThrow(/apiKey/);
     });
 
-    it("baseURL 为新地址 .../api/coding/paas/v4（无 trailing slash）", async () => {
+    it("请求发往注入的 baseURL（无 trailing slash）", async () => {
         let capturedUrl = "";
         const fetch = async (url: unknown) => {
             capturedUrl = String(url);
             return fakeFetch(TEXT_RESPONSE)();
         };
-        const p = new OpenAIProvider("glm-4.5-air", { fetch });
+        const p = new OpenAIProvider("glm-4.5-air", {
+            baseURL: BASE_URL,
+            apiKey: "sdk-key",
+            fetch,
+        });
         await p.generate([{ role: "user", content: "x" }] as Message[], []);
         expect(capturedUrl).toContain("/api/coding/paas/v4");
         expect(capturedUrl).not.toContain("/api/paas/v4/");

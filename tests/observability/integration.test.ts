@@ -39,9 +39,11 @@ describe("provider + observability 集成", () => {
     it("CostTracker 装饰 ClaudeProvider，调 LLM 时在 trace Span 内计费", async () => {
         const session = new Session("int", workDir);
         const provider = new ClaudeProvider("glm-4.5-air", {
+            baseURL: "https://open.bigmodel.cn/api/anthropic",
             fetch: fakeFetch(RESPONSE),
         });
-        const tracked = new CostTracker(provider, "glm-4.5-air", session);
+        const PRICING = { "glm-4.5-air": { inputPrice: 0.15, outputPrice: 0.15 } };
+        const tracked = new CostTracker(provider, "glm-4.5-air", PRICING, session);
 
         let root: Span | null = null;
         await withSpan("turn", async (span) => {

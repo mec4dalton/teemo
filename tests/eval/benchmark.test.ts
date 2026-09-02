@@ -33,9 +33,11 @@ class FakeEditProvider implements LLMProvider {
     }
 }
 
+const PRICING = { "glm-4.5-air": { inputPrice: 0.15, outputPrice: 0.15 } };
+
 describe("BenchmarkRunner", () => {
     it("runSingleTest：SetupScript + Agent run + ValidateScript exit 0 判过", async () => {
-        const runner = new BenchmarkRunner("glm-4.5-air", new FakeEditProvider());
+        const runner = new BenchmarkRunner("glm-4.5-air", new FakeEditProvider(), PRICING);
         const tc: TestCase = {
             id: "test_pass",
             name: "改版本号",
@@ -49,7 +51,7 @@ describe("BenchmarkRunner", () => {
     });
 
     it("ValidateScript 失败时 passed=false + errorMsg", async () => {
-        const runner = new BenchmarkRunner("glm-4.5-air", new FakeEditProvider());
+        const runner = new BenchmarkRunner("glm-4.5-air", new FakeEditProvider(), PRICING);
         const tc: TestCase = {
             id: "test_fail",
             name: "改版本号（判卷必失败）",
@@ -63,7 +65,7 @@ describe("BenchmarkRunner", () => {
     });
 
     it("runSuite 汇总多个用例结果", async () => {
-        const runner = new BenchmarkRunner("glm-4.5-air", new FakeEditProvider());
+        const runner = new BenchmarkRunner("glm-4.5-air", new FakeEditProvider(), PRICING);
         const cases: TestCase[] = [
             {
                 id: "s1",

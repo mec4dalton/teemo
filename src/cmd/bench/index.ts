@@ -15,10 +15,13 @@ const testcases: TestCase[] = [
     },
 ];
 
+// main（thin）：loadConfig + provider + BenchmarkRunner 跑分
 async function main(): Promise<void> {
-    const { OpenAIProvider } = await import("../../provider/openai.js");
-    const provider = new OpenAIProvider("glm-4.5-air");
-    const runner = new BenchmarkRunner("glm-4.5-air", provider);
+    const { loadConfig } = await import("../../config/loader.js");
+    const { createProvider } = await import("../../provider/factory.js");
+    const cfg = await loadConfig();
+    const provider = createProvider(cfg);
+    const runner = new BenchmarkRunner(cfg.model, provider, cfg.pricing);
     const results = await runner.runSuite(testcases);
     printReport(results);
 }

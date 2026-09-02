@@ -3,6 +3,7 @@
 
 import * as http from "node:http";
 import type { LLMProvider } from "../../provider/interface.js";
+import type { Price } from "../../config/schema.js";
 import type { Session } from "../../context/session.js";
 import type { AgentEngine } from "../../engine/loop.js";
 import type { ToolCall } from "../../schema/message.js";
@@ -64,23 +65,26 @@ function pickSendMsg(
 export function buildEngineFactory(
     provider: LLMProvider,
     modelName: string,
+    pricing: Record<string, Price>,
     registry: Registry,
 ): AgentEngineFactory {
     return (session: Session): AgentEngine => {
-        const tracked = new CostTracker(provider, modelName, session);
+        const tracked = new CostTracker(provider, modelName, pricing, session);
         return new AgentEngineClass(tracked, registry, false, false);
     };
 }
 
-// main（thin）：workDir + provider + registry + factory + http server
+// main（thin）：workDir + loadConfig + provider + registry + factory + http server
 async function main(): Promise<void> {
     const workDir = process.cwd() + "/workspace";
     const fs = await import("node:fs/promises");
     await fs.mkdir(workDir, { recursive: true });
-    const { OpenAIProvider } = await import("../../provider/openai.js");
-    const provider = new OpenAIProvider("glm-4.5-air");
+    const { loadConfig } = await import("../../config/loader.js");
+    const { createProvider } = await import("../../provider/factory.js");
+    const cfg = await loadConfig({ workDir });
+    const provider = createProvider(cfg);
     const registry = buildAgentOpsRegistry(workDir);
-    const factory = buildEngineFactory(provider, "glm-4.5-air", registry);
+    const factory = buildEngineFactory(provider, cfg.model, cfg.pricing, registry);
     await startServer(factory, workDir);
 }
 

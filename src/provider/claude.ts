@@ -11,6 +11,7 @@ import type {
 import { RoleSystem, RoleUser, RoleAssistant } from "../schema/message.js";
 
 export interface ClaudeProviderOptions {
+    baseURL: string;
     fetch?: typeof fetch;
     apiKey?: string;
 }
@@ -19,16 +20,16 @@ export class ClaudeProvider implements LLMProvider {
     private readonly client: Anthropic;
     private readonly model: string;
 
-    constructor(model: string, options?: ClaudeProviderOptions) {
-        const apiKey = options?.apiKey ?? process.env.ZHIPU_API_KEY ?? "";
-        if (!apiKey && !options?.fetch) {
-            throw new Error("请设置 ZHIPU_API_KEY 环境变量");
+    constructor(model: string, options: ClaudeProviderOptions) {
+        const apiKey = options.apiKey ?? "";
+        if (!apiKey && !options.fetch) {
+            throw new Error("缺少 apiKey（请在配置文件中设置或用 $ENV 引用）");
         }
         this.model = model;
         this.client = new Anthropic({
             apiKey,
-            baseURL: "https://open.bigmodel.cn/api/anthropic",
-            fetch: options?.fetch as never,
+            baseURL: options.baseURL,
+            fetch: options.fetch as never,
         });
     }
 

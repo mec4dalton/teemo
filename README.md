@@ -37,7 +37,7 @@ AI Agent 的壁垒不只在于调用的大模型的能力，也在于工程整�
 git clone https://github.com/mec4dalton/teemo.git
 cd teemo
 npm install
-export ZHIPU_API_KEY=你的智谱key
+# 创建 config.json，并配置 API。可参考 demo-workspace/config.json
 npx tsx src/cmd/teemo/index.ts -prompt "docker compose up 后 web 服务访问不了，排查配置" -dir demo-workspace
 ```
 
@@ -53,7 +53,32 @@ npx tsx src/cmd/teemo/index.ts -prompt "docker compose up 后 web 服务访问�
 
 ## 配置
 
-**必需**：`ZHIPU_API_KEY`（智谱 BigModel 平台获取）
+配置文件统一命名 `config.json`，三层加载（逐层浅合并，后者优先）：
+
+| 层级 | 路径 | 说明 |
+|---|---|---|
+| 1. 工作区级 | `<工作目录>/.teemo/config.json` | 跟着 `-dir` 指定的工作区走（与 skills/traces 同级） |
+| 2. 用户级 | `~/.teemo/config.json` | 用户全局覆盖（可写明文 key，不进 git） |
+| 3. 环境级 | `$TEEMO_CONFIG` 指定路径 | 临时覆盖（优先级最高） |
+
+`demo-workspace/.teemo/config.json` 是可提交的样例，新工作区可直接复制：
+
+```json
+{
+    "protocol": "openai",
+    "baseURL": "https://open.bigmodel.cn/api/coding/paas/v4",
+    "model": "glm-4.5-air",
+    "apiKey": "$ZHIPU_API_KEY",
+    "pricing": {
+        "glm-4.5-air": { "inputPrice": 0.15, "outputPrice": 0.15 }
+    }
+}
+```
+
+- `protocol` 可选 `openai` / `claude`（对应 `src/provider/` 两种协议实现，baseURL 随协议变化）
+- `apiKey` 支持 `$VAR` 语法引用环境变量（如 `$ZHIPU_API_KEY`，智谱 BigModel 平台获取），也可在用户级文件写明文
+- `pricing` 为价格表（元/百万 token），`CostTracker` 计费用
+- 三层均无配置文件时启动报错，按报错列出的路径创建即可
 
 **agentops 额外**：`FEISHU_APP_ID` / `FEISHU_APP_SECRET` / `FEISHU_ENCRYPT_KEY` / `FEISHU_VERIFY_TOKEN`（飞书平台获取）
 
@@ -86,7 +111,7 @@ npx tsc --noEmit      # 类型检查
 
 ## 致谢
 
-- 原始 Go 版：[go-tiny-claw](https://github.com/bigwhite/publication)（Apache License 2.0 协议）
+- [go-tiny-claw](https://github.com/bigwhite/publication)（Apache License 2.0 协议）
 
 ## 许可证
 

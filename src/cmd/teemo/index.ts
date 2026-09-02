@@ -1,6 +1,7 @@
 // cmd 入口 - teemo CLI
 
 import type { LLMProvider } from "../../provider/interface.js";
+import type { Price, TeemoConfig } from "../../config/schema.js";
 import type { Session } from "../../context/session.js";
 import { RoleUser } from "../../schema/message.js";
 import { CostTracker } from "../../observability/tracker.js";
@@ -37,10 +38,11 @@ export function parseAgentArgs(argv: string[]): AgentArgs | null {
 export function assembleAgentEngine(
     provider: LLMProvider,
     modelName: string,
+    pricing: Record<string, Price>,
     session: Session,
     planMode: boolean,
 ): { engine: AgentEngine } {
-    const tracked = new CostTracker(provider, modelName, session);
+    const tracked = new CostTracker(provider, modelName, pricing, session);
     const registry = newRegistry();
     registry.register(new ReadFileTool(session.workDir));
     registry.register(new WriteFileTool(session.workDir));
@@ -59,6 +61,20 @@ function printCost(session: Session): void {
     );
 }
 
+// 加载配置并构建 provider（入口统一装配点）
+async function createConfiguredProvider(
+    workDir: string,
+): Promise<{
+    cfg: TeemoConfig;
+    provider: LLMProvider;
+}> {
+    const { loadConfig } = await import("../../config/loader.js");
+    const { createProvider } = await import("../../provider/factory.js");
+    const cfg = await loadConfig({ workDir });
+    const provider = createProvider(cfg);
+    return { cfg, provider };
+}
+
 // main（thin）：flag + 真实 provider + assemble + run
 async function main(): Promise<void> {
     const args = parseAgentArgs(process.argv.slice(2));
@@ -66,12 +82,17 @@ async function main(): Promise<void> {
         console.log('用法: teemo -prompt "任务" [-dir .] [-session id]');
         process.exit(1);
     }
-    const { OpenAIProvider } = await import("../../provider/openai.js");
+    const { cfg, provider } = await createConfiguredProvider(args.dir);
     const { globalSessionMgr } = await import("../../context/session.js");
-    const provider = new OpenAIProvider("glm-4.5-air");
     const session = globalSessionMgr.getOrCreate(args.session, args.dir);
     session.append({ role: RoleUser, content: args.prompt });
-    const { engine } = assembleAgentEngine(provider, "glm-4.5-air", session, true);
+    const { engine } = assembleAgentEngine(
+        provider,
+        cfg.model,
+        cfg.pricing,
+        session,
+        true,
+    );
     const reporter = new TerminalReporter();
     await engine.run(session, reporter);
     printCost(session);
