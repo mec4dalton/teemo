@@ -1,7 +1,7 @@
 // cmd 入口 - agentops 飞书服务端
-// Node http；安全 middleware 接通 feishu 审批链 + engineFactory 闭包
+// WSClient 长连接；安全 middleware 接通 feishu 审批链 + engineFactory 闭包
 
-import * as http from "node:http";
+import * as lark from "@larksuiteoapi/node-sdk";
 import type { LLMProvider } from "../../provider/interface.js";
 import type { Price } from "../../config/schema.js";
 import type { Session } from "../../context/session.js";
@@ -74,7 +74,7 @@ export function buildEngineFactory(
     };
 }
 
-// main（thin）：workDir + loadConfig + provider + registry + factory + http server
+// main（thin）：workDir + loadConfig + provider + registry + factory + 长连接
 async function main(): Promise<void> {
     const workDir = process.cwd() + "/workspace";
     const fs = await import("node:fs/promises");
@@ -85,57 +85,21 @@ async function main(): Promise<void> {
     const provider = createProvider(cfg);
     const registry = buildAgentOpsRegistry(workDir);
     const factory = buildEngineFactory(provider, cfg.model, cfg.pricing, registry);
-    await startServer(factory, workDir);
-}
-
-// Node http server + webhook 事件分发
-async function startServer(
-    factory: AgentEngineFactory,
-    workDir: string,
-): Promise<void> {
     const bot = new FeishuBot(factory, workDir);
-    const server = http.createServer((req, res) => {
-        void handleRequest(req, res, bot);
-    });
-    server.listen(48080, () => {
-        console.log("📡 Webhook 服务已启动，监听端口 :48080");
-    });
+    await startLongConnection(bot);
 }
 
-// 事件分发：/webhook/event 解析 body 后交 bot.handleEvent
-function handleRequest(
-    req: http.IncomingMessage,
-    res: http.ServerResponse,
-    bot: FeishuBot,
-): Promise<void> {
-    if (req.url !== "/webhook/event") {
-        res.end("teemo agentops");
-        return Promise.resolve();
-    }
-    let body = "";
-    req.on("data", (chunk: Buffer) => (body += chunk));
-    req.on("end", () => void dispatch(body, res, bot));
-    return Promise.resolve();
-}
-
-async function dispatch(
-    body: string,
-    res: http.ServerResponse,
-    bot: FeishuBot,
-): Promise<void> {
-    try {
-        const event = JSON.parse(body) as {
-            event?: { message?: { chat_id?: string; content?: string } };
-        };
-        const chatId = event.event?.message?.chat_id;
-        const content = event.event?.message?.content;
-        if (chatId && content) {
-            await bot.handleEvent(chatId, content);
-        }
-    } catch {
-        // 忽略解析错误
-    }
-    res.end("ok");
+// WSClient 长连接：SDK 负责建连鉴权、心跳、自动重连、事件分片合并
+async function startLongConnection(bot: FeishuBot): Promise<void> {
+    const wsClient = new lark.WSClient({
+        appId: bot.credentials.appId,
+        appSecret: bot.credentials.appSecret,
+        onReady: () => console.log("🔌 飞书长连接已建立"),
+        onReconnecting: () => console.log("🔄 长连接断开，正在重连..."),
+        onReconnected: () => console.log("✅ 长连接已恢复"),
+        onError: (err) => console.error(`❌ 长连接失败: ${String(err)}`),
+    });
+    await wsClient.start({ eventDispatcher: bot.buildEventDispatcher() });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

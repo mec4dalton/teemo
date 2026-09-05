@@ -50,26 +50,46 @@ function stripFeishuWrapper(raw: string): string {
 // 工厂：按 Session 产出独立 Engine
 export type AgentEngineFactory = (session: Session) => AgentEngine;
 
+// 凭据对象：供入口构造 WSClient（单一事实源）
+export interface FeishuCredentials {
+    appId: string;
+    appSecret: string;
+}
+
+// 从 env 读取并校验飞书凭据（fail fast：缺失即抛，指明变量名）
+function readCredentialsFromEnv(): FeishuCredentials {
+    const appId = process.env.FEISHU_APP_ID;
+    const appSecret = process.env.FEISHU_APP_SECRET;
+    if (!appId || !appSecret) {
+        throw new Error(
+            "缺少飞书凭据：请设置 FEISHU_APP_ID 与 FEISHU_APP_SECRET（飞书开发者后台获取）",
+        );
+    }
+    return { appId, appSecret };
+}
+
 export class FeishuBot {
     private readonly client: LarkMessager;
+    readonly credentials: FeishuCredentials;
 
     constructor(
         private readonly factory: AgentEngineFactory,
         private readonly workDir: string,
         client?: LarkMessager,
+        credentials?: FeishuCredentials,
     ) {
+        this.credentials = credentials ?? readCredentialsFromEnv();
         this.client = client ?? this.buildClient();
     }
 
-    // 事件订阅。内部读 env（verifyToken + encryptKey）。
+    // 长连接事件分发。鉴权在建连时完成，两个凭据参数必须传空串（官方要求）。
     buildEventDispatcher(): lark.EventDispatcher {
-        const encryptKey = process.env.FEISHU_ENCRYPT_KEY ?? "";
-        const verificationToken = process.env.FEISHU_VERIFY_TOKEN ?? "";
-        return new lark.EventDispatcher({ encryptKey, verificationToken }).register({
+        return new lark.EventDispatcher({
+            verificationToken: "",
+            encryptKey: "",
+        }).register({
             "im.message.receive_v1": async (data) => {
-                const chatId = data.message.chat_id;
-                const content = data.message.content;
-                await this.handleEvent(chatId, content);
+                await this.handleEvent(data.message.chat_id, data.message.content);
             },
         });
     }
@@ -117,8 +137,7 @@ export class FeishuBot {
     }
 
     private buildClient(): LarkMessager {
-        const appId = process.env.FEISHU_APP_ID ?? "";
-        const appSecret = process.env.FEISHU_APP_SECRET ?? "";
+        const { appId, appSecret } = this.credentials;
         return new lark.Client({ appId, appSecret }) as unknown as LarkMessager;
     }
 }
@@ -131,5 +150,8 @@ export function newFeishuBotForTest(opts: {
     const fakeClient: LarkMessager = {
         im: { message: { create: async () => undefined } },
     };
-    return new FeishuBot(opts.factory, opts.workDir, fakeClient);
+    return new FeishuBot(opts.factory, opts.workDir, fakeClient, {
+        appId: "test-app",
+        appSecret: "test-secret",
+    });
 }

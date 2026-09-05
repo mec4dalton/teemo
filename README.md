@@ -48,7 +48,7 @@ npx tsx src/cmd/teemo/index.ts -prompt "docker compose up 后 web 服务访问�
 | 入口 | 形态 | 用途 | 命令 |
 |---|---|---|---|
 | `teemo` | CLI 一次性 | 本地 YOLO 执行（开 Thinking + PlanMode） | `npx tsx src/cmd/teemo/index.ts -prompt "..." -dir 工作目录` |
-| `agentops` | 飞书服务端 | 飞书机器人触发 + 高危审批（监听 :48080） | `npx tsx src/cmd/agentops/index.ts` |
+| `agentops` | 飞书服务端 | 飞书机器人触发 + 高危审批（WSClient 长连接，无需公网） | `npx tsx src/cmd/agentops/index.ts` |
 | `bench` | 自动化评测 | 物理沙箱跑分 | `npx tsx src/cmd/bench/index.ts` |
 
 ## 配置
@@ -80,7 +80,7 @@ npx tsx src/cmd/teemo/index.ts -prompt "docker compose up 后 web 服务访问�
 - `pricing` 为价格表（元/百万 token），`CostTracker` 计费用
 - 三层均无配置文件时启动报错，按报错列出的路径创建即可
 
-**agentops 额外**：`FEISHU_APP_ID` / `FEISHU_APP_SECRET` / `FEISHU_ENCRYPT_KEY` / `FEISHU_VERIFY_TOKEN`（飞书平台获取）
+**agentops 额外**：`FEISHU_APP_ID` / `FEISHU_APP_SECRET`（飞书开发者后台获取；入站走长连接，需在开发者后台把事件订阅方式切为“使用长连接接收事件”，切换时客户端须在线）
 
 **工作区**（`-dir` 指定的目录）：
 
