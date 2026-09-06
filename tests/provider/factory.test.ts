@@ -6,7 +6,7 @@ import type { TeemoConfig } from "@/config/schema.js";
 
 const BASE: Pick<TeemoConfig, "baseURL" | "model" | "apiKey"> = {
     baseURL: "https://open.bigmodel.cn/api/coding/paas/v4",
-    model: "glm-4.5-air",
+    model: "deepseek-v4-flash",
     apiKey: "sk-test",
 };
 

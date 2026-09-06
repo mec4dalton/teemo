@@ -4,10 +4,10 @@ import { PROTOCOLS, isTeemoConfig } from "@/config/schema.js";
 describe("isTeemoConfig", () => {
     const valid = {
         protocol: "openai",
-        baseURL: "https://open.bigmodel.cn/api/coding/paas/v4",
-        model: "glm-4.5-air",
-        apiKey: "$ZHIPU_API_KEY",
-        pricing: { "glm-4.5-air": { inputPrice: 0.15, outputPrice: 0.15 } },
+        baseURL: "https://api.deepseek.com",
+        model: "deepseek-v4-flash",
+        apiKey: "$LLM_API_KEY",
+        pricing: { "deepseek-v4-flash": { inputPrice: 1.5, outputPrice: 4.5 } },
     };
 
     it("合法配置返回 true", () => {
@@ -29,7 +29,7 @@ describe("isTeemoConfig", () => {
     it("pricing 价格缺字段返回 false", () => {
         const broken = {
             ...valid,
-            pricing: { "glm-4.5-air": { inputPrice: 0.15 } },
+            pricing: { "deepseek-v4-flash": { inputPrice: 1.5 } },
         };
         expect(isTeemoConfig(broken)).toBe(false);
     });

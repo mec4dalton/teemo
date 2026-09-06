@@ -41,7 +41,7 @@ const TOOL_RESPONSE = {
 
 describe("OpenAIProvider", () => {
     it("generate 返回 text content + usage（mock fetch）", async () => {
-        const p = new OpenAIProvider("glm-4.5-air", {
+        const p = new OpenAIProvider("deepseek-v4-flash", {
             baseURL: BASE_URL,
             apiKey: "sdk-key",
             fetch: fakeFetch(TEXT_RESPONSE),
@@ -55,7 +55,7 @@ describe("OpenAIProvider", () => {
     });
 
     it("generate 解析 tool_calls 为 toolCalls（arguments 为 JSON 字符串）", async () => {
-        const p = new OpenAIProvider("glm-4.5-air", {
+        const p = new OpenAIProvider("deepseek-v4-flash", {
             baseURL: BASE_URL,
             apiKey: "sdk-key",
             fetch: fakeFetch(TOOL_RESPONSE),
@@ -71,7 +71,7 @@ describe("OpenAIProvider", () => {
 
     it("缺 apiKey 且未注入 fetch 时 throw", () => {
         expect(() =>
-            new OpenAIProvider("glm-4.5-air", { baseURL: BASE_URL }),
+            new OpenAIProvider("deepseek-v4-flash", { baseURL: BASE_URL }),
         ).toThrow(/apiKey/);
     });
 
@@ -81,7 +81,7 @@ describe("OpenAIProvider", () => {
             capturedUrl = String(url);
             return fakeFetch(TEXT_RESPONSE)();
         };
-        const p = new OpenAIProvider("glm-4.5-air", {
+        const p = new OpenAIProvider("deepseek-v4-flash", {
             baseURL: BASE_URL,
             apiKey: "sdk-key",
             fetch,

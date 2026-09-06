@@ -87,7 +87,7 @@ export class ClaudeProvider implements LLMProvider {
         return { role: "user", content: msg.content };
     }
 
-    // 注意：即使 content 空，也下发空 TextBlock，避免智谱 1214 错误
+    // 注意：即使 content 空，也下发空 TextBlock，可以避免一些错误（例如：智谱 1214）
     private buildAssistantMsg(msg: Message): Anthropic.MessageParam {
         const blocks: Anthropic.ContentBlockParam[] = [
             { type: "text", text: msg.content },

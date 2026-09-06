@@ -7,7 +7,7 @@ import { Session } from "@/context/session.js";
 import type { Price } from "@/config/schema.js";
 
 const PRICING: Record<string, Price> = {
-    "glm-4.5-air": { inputPrice: 0.15, outputPrice: 0.15 },
+    "deepseek-v4-flash": { inputPrice: 1.5, outputPrice: 4.5 },
 };
 
 class FakeProvider implements LLMProvider {
@@ -35,7 +35,7 @@ describe("assembleAgentEngine", () => {
         const session = new Session("s1", "/tmp");
         const { engine } = assembleAgentEngine(
             new FakeProvider(),
-            "glm-4.5-air",
+            "deepseek-v4-flash",
             PRICING,
             session,
             false,

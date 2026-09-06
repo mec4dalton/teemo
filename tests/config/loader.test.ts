@@ -31,9 +31,9 @@ async function writeJSON(file: string, obj: Record<string, unknown>): Promise<vo
 const FULL = {
     protocol: "openai",
     baseURL: "https://workspace.example/api/coding/paas/v4",
-    model: "glm-4.5-air",
+    model: "deepseek-v4-flash",
     apiKey: "$MY_KEY",
-    pricing: { "glm-4.5-air": { inputPrice: 0.15, outputPrice: 0.15 } },
+    pricing: { "deepseek-v4-flash": { inputPrice: 1.5, outputPrice: 4.5 } },
 };
 
 describe("loadConfig", () => {
@@ -67,7 +67,7 @@ describe("loadConfig", () => {
             homeConfigPath: paths.homeConfig,
             env: process.env,
         });
-        expect(cfg.model).toBe("glm-4.5-air");
+        expect(cfg.model).toBe("deepseek-v4-flash");
     });
 
     it("默认 workDir 为 cwd", async () => {
@@ -80,7 +80,7 @@ describe("loadConfig", () => {
                 homeConfigPath: paths.homeConfig,
                 env: process.env,
             });
-            expect(cfg.model).toBe("glm-4.5-air");
+            expect(cfg.model).toBe("deepseek-v4-flash");
         } finally {
             process.chdir(cwd);
         }
@@ -89,17 +89,17 @@ describe("loadConfig", () => {
     it("home 层浅合并覆盖 model（pricing 整体替换）", async () => {
         await writeJSON(paths.workspaceConfig, FULL);
         await writeJSON(paths.homeConfig, {
-            model: "glm-4.6",
-            pricing: { "glm-4.6": { inputPrice: 0.2, outputPrice: 0.2 } },
+            model: "glm-5.2",
+            pricing: { "glm-5.2": { inputPrice: 0.2, outputPrice: 0.2 } },
         });
         const cfg = await loadConfig({
             workspaceConfigPath: paths.workspaceConfig,
             homeConfigPath: paths.homeConfig,
             env: process.env,
         });
-        expect(cfg.model).toBe("glm-4.6");
-        expect(cfg.pricing["glm-4.6"].inputPrice).toBe(0.2);
-        expect(cfg.pricing["glm-4.5-air"]).toBeUndefined();
+        expect(cfg.model).toBe("glm-5.2");
+        expect(cfg.pricing["glm-5.2"].inputPrice).toBe(0.2);
+        expect(cfg.pricing["deepseek-v4-flash"]).toBeUndefined();
     });
 
     it("TEEMO_CONFIG 层优先级最高", async () => {
@@ -167,7 +167,7 @@ describe("loadConfig", () => {
 
     it("合并后缺字段报错（fail fast）", async () => {
         // 只有 home 层、无工作区层：合并结果缺 protocol 等字段
-        await writeJSON(paths.homeConfig, { model: "glm-4.6" });
+        await writeJSON(paths.homeConfig, { model: "glm-5.2" });
         await expect(
             loadConfig({
                 workDir: paths.workDir,
@@ -189,7 +189,7 @@ describe("loadConfig", () => {
         ).rejects.toThrow(/protocol/);
     });
 
-    it("$ENV 展开为空报错（沿用 ZHIPU_API_KEY 语义）", async () => {
+    it("$ENV 展开为空报错（沿用 LLM_API_KEY 语义）", async () => {
         delete process.env.MY_KEY;
         await fs.mkdir(path.join(paths.workDir, ".teemo"), { recursive: true });
         await writeJSON(paths.workspaceConfig, FULL);

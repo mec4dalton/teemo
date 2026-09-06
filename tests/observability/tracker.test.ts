@@ -18,16 +18,16 @@ class FakeProvider implements LLMProvider {
     }
 }
 
-const PRICING = { "glm-4.5-air": { inputPrice: 0.15, outputPrice: 0.15 } };
+const PRICING = { "deepseek-v4-flash": { inputPrice: 1.5, outputPrice: 4.5 } };
 
 describe("CostTracker", () => {
     it("implements LLMProvider（可替换真实 provider）", () => {
-        const tracker = new CostTracker(new FakeProvider(), "glm-4.5-air", PRICING, null);
+        const tracker = new CostTracker(new FakeProvider(), "deepseek-v4-flash", PRICING, null);
         expect(typeof tracker.generate).toBe("function");
     });
 
     it("generate 透传 next provider 的响应（content 不变）", async () => {
-        const tracker = new CostTracker(new FakeProvider(), "glm-4.5-air", PRICING, null);
+        const tracker = new CostTracker(new FakeProvider(), "deepseek-v4-flash", PRICING, null);
         const result = await tracker.generate(
             [{ role: "user", content: "hi" }] as Message[],
             [],
@@ -38,13 +38,13 @@ describe("CostTracker", () => {
 
     it("generate 按注入 pricing 算花费并写入 Session.recordUsage", async () => {
         const session = new Session("s1", "/tmp");
-        const tracker = new CostTracker(new FakeProvider(), "glm-4.5-air", PRICING, session);
+        const tracker = new CostTracker(new FakeProvider(), "deepseek-v4-flash", PRICING, session);
         await tracker.generate([{ role: "user", content: "hi" }] as Message[], []);
-        // 100 input + 50 output，价格 0.15/0.15 元/百万 token
-        // cost = (100*0.15 + 50*0.15) / 1_000_000 = 22.5e-6
+        // 100 input + 50 output，价格 1.5/4.5 元/百万 token
+        // cost = (100*1.5 + 50*4.5) / 1_000_000 = 375e-6
         expect(session.totalPromptTokens).toBe(100);
         expect(session.totalCompletionTokens).toBe(50);
-        expect(session.totalCostCNY).toBeCloseTo(22.5e-6, 10);
+        expect(session.totalCostCNY).toBeCloseTo(375e-6, 10);
     });
 
     it("pricing 中无该 model 不计费但透传响应（不抛错）", async () => {

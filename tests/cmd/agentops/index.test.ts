@@ -17,7 +17,7 @@ import { FeishuReporter } from "@/feishu/reporter.js";
 import type { Price } from "@/config/schema.js";
 
 const PRICING: Record<string, Price> = {
-    "glm-4.5-air": { inputPrice: 0.15, outputPrice: 0.15 },
+    "deepseek-v4-flash": { inputPrice: 1.5, outputPrice: 4.5 },
 };
 
 class FakeProvider implements LLMProvider {
@@ -59,7 +59,7 @@ describe("buildEngineFactory", () => {
         const registry = buildAgentOpsRegistry("/tmp");
         const factory = buildEngineFactory(
             provider,
-            "glm-4.5-air",
+            "deepseek-v4-flash",
             PRICING,
             registry,
         );
@@ -73,7 +73,7 @@ describe("resolveFeishuCredentials（配置优先 env 兜底）", () => {
     const BASE = {
         protocol: "openai" as const,
         baseURL: "https://x.example/v4",
-        model: "glm-4.5-air",
+        model: "deepseek-v4-flash",
         apiKey: "sk-x",
         pricing: {},
     };

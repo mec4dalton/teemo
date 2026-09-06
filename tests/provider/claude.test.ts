@@ -18,7 +18,7 @@ const TEXT_RESPONSE = {
     type: "message",
     role: "assistant",
     content: [{ type: "text", text: "你好" }],
-    model: "glm-4.5-air",
+    model: "deepseek-v4-flash",
     stop_reason: "end_turn",
     stop_sequence: null,
     usage: { input_tokens: 10, output_tokens: 5 },
@@ -31,7 +31,7 @@ const TOOL_USE_RESPONSE = {
     content: [
         { type: "tool_use", id: "tu_1", name: "bash", input: { command: "ls" } },
     ],
-    model: "glm-4.5-air",
+    model: "deepseek-v4-flash",
     stop_reason: "tool_use",
     stop_sequence: null,
     usage: { input_tokens: 8, output_tokens: 3 },
@@ -39,7 +39,7 @@ const TOOL_USE_RESPONSE = {
 
 describe("ClaudeProvider", () => {
     it("generate 返回 text content + usage（mock fetch）", async () => {
-        const p = new ClaudeProvider("glm-4.5-air", {
+        const p = new ClaudeProvider("deepseek-v4-flash", {
             baseURL: BASE_URL,
             fetch: fakeFetch(TEXT_RESPONSE),
         });
@@ -54,7 +54,7 @@ describe("ClaudeProvider", () => {
     });
 
     it("generate 解析 tool_use block 为 toolCalls", async () => {
-        const p = new ClaudeProvider("glm-4.5-air", {
+        const p = new ClaudeProvider("deepseek-v4-flash", {
             baseURL: BASE_URL,
             fetch: fakeFetch(TOOL_USE_RESPONSE),
         });
@@ -69,7 +69,7 @@ describe("ClaudeProvider", () => {
 
     it("缺 apiKey 且未注入 fetch 时 throw", () => {
         expect(() =>
-            new ClaudeProvider("glm-4.5-air", { baseURL: BASE_URL }),
+            new ClaudeProvider("deepseek-v4-flash", { baseURL: BASE_URL }),
         ).toThrow(/apiKey/);
     });
 
@@ -80,7 +80,7 @@ describe("ClaudeProvider", () => {
             capturedBody = JSON.parse(init!.body as string);
             return fakeFetch(TEXT_RESPONSE)();
         };
-        const p = new ClaudeProvider("glm-4.5-air", { baseURL: BASE_URL, fetch });
+        const p = new ClaudeProvider("deepseek-v4-flash", { baseURL: BASE_URL, fetch });
         await p.generate(
             [
                 { role: "user", content: "q" },
