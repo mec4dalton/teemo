@@ -57,12 +57,13 @@ export interface FeishuCredentials {
 }
 
 // 从 env 读取并校验飞书凭据（fail fast：缺失即抛，指明变量名）
-function readCredentialsFromEnv(): FeishuCredentials {
+export function readCredentialsFromEnv(): FeishuCredentials {
     const appId = process.env.FEISHU_APP_ID;
     const appSecret = process.env.FEISHU_APP_SECRET;
     if (!appId || !appSecret) {
         throw new Error(
-            "缺少飞书凭据：请设置 FEISHU_APP_ID 与 FEISHU_APP_SECRET（飞书开发者后台获取）",
+            "缺少飞书凭据：请设置 FEISHU_APP_ID 与 FEISHU_APP_SECRET（飞书开发者后台获取）" +
+                "或在 config.json 配置 feishu 节",
         );
     }
     return { appId, appSecret };

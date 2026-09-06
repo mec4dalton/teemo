@@ -5,7 +5,7 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { isTeemoConfig, type TeemoConfig } from "./schema.js";
+import { isTeemoConfig, type FeishuConfig, type TeemoConfig } from "./schema.js";
 
 export interface LoadOptions {
     workDir?: string;
@@ -45,13 +45,24 @@ function expandEnvRef(value: string, env: Record<string, string | undefined>): s
     if (!value.startsWith("$")) return value;
     const name = value.slice(1);
     if (name === "") {
-        throw new Error('apiKey 以 "$" 开头但未指定变量名（如 "$MY_KEY"）');
+        throw new Error('配置值以 "$" 开头但未指定变量名（如 "$MY_KEY"）');
     }
     const expanded = env[name] ?? "";
     if (expanded === "") {
         throw new Error(`环境变量 ${name} 未设置或为空，请设置 ${name}`);
     }
     return expanded;
+}
+
+// feishu 节逐字段展开 $ENV（复用 expandEnvRef，与 apiKey 同语义）
+function expandFeishu(
+    feishu: { appId: string; appSecret: string },
+    env: Record<string, string | undefined>,
+): FeishuConfig {
+    return {
+        appId: expandEnvRef(feishu.appId, env),
+        appSecret: expandEnvRef(feishu.appSecret, env),
+    };
 }
 
 export async function loadConfig(options?: LoadOptions): Promise<TeemoConfig> {
@@ -106,5 +117,9 @@ function buildConfig(
                 `protocol 取值 openai|claude），实际内容：${JSON.stringify(merged)}`,
         );
     }
-    return { ...merged, apiKey: expandEnvRef(merged.apiKey, env) };
+    return {
+        ...merged,
+        apiKey: expandEnvRef(merged.apiKey, env),
+        feishu: merged.feishu ? expandFeishu(merged.feishu, env) : undefined,
+    };
 }

@@ -19,8 +19,11 @@ import { isDangerousCommand, globalApprovalMgr } from "../../feishu/approval.js"
 import {
     FeishuBot,
     getCurrentReporter,
+    readCredentialsFromEnv,
     type AgentEngineFactory,
+    type FeishuCredentials,
 } from "../../feishu/bot.js";
+import type { TeemoConfig } from "../../config/schema.js";
 
 // 构建 registry：4 工具 + 安全 middleware（接通 feishu 审批链）
 export function buildAgentOpsRegistry(workDir: string): Registry {
@@ -74,9 +77,14 @@ export function buildEngineFactory(
     };
 }
 
+// 飞书凭据解析：config.json feishu 节优先，缺失回落环境变量
+export function resolveFeishuCredentials(cfg: TeemoConfig): FeishuCredentials {
+    return cfg.feishu ?? readCredentialsFromEnv();
+}
+
 // main（thin）：workDir + loadConfig + provider + registry + factory + 长连接
 async function main(): Promise<void> {
-    const workDir = process.cwd() + "/workspace";
+    const workDir = process.cwd() + "/feishu-workspace";
     const fs = await import("node:fs/promises");
     await fs.mkdir(workDir, { recursive: true });
     const { loadConfig } = await import("../../config/loader.js");
@@ -85,7 +93,12 @@ async function main(): Promise<void> {
     const provider = createProvider(cfg);
     const registry = buildAgentOpsRegistry(workDir);
     const factory = buildEngineFactory(provider, cfg.model, cfg.pricing, registry);
-    const bot = new FeishuBot(factory, workDir);
+    const bot = new FeishuBot(
+        factory,
+        workDir,
+        undefined,
+        resolveFeishuCredentials(cfg),
+    );
     await startLongConnection(bot);
 }
 

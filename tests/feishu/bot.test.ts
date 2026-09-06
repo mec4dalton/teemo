@@ -105,6 +105,26 @@ describe("FeishuBot 凭据 fail fast", () => {
         }
     });
 
+    it("缺凭据报错文案指引 feishu 节", () => {
+        const savedId = process.env.FEISHU_APP_ID;
+        const savedSecret = process.env.FEISHU_APP_SECRET;
+        delete process.env.FEISHU_APP_ID;
+        delete process.env.FEISHU_APP_SECRET;
+        try {
+            expect(
+                () =>
+                    new FeishuBot(
+                        undefined as never,
+                        "/tmp/test-workspace",
+                        { im: { message: { create: async () => undefined } } } as never,
+                    ),
+            ).toThrow(/config\.json/);
+        } finally {
+            if (savedId !== undefined) process.env.FEISHU_APP_ID = savedId;
+            if (savedSecret !== undefined) process.env.FEISHU_APP_SECRET = savedSecret;
+        }
+    });
+
     it("凭据齐全时 credentials 暴露 appId/appSecret（供 WSClient 使用）", () => {
         process.env.FEISHU_APP_ID = "app-1";
         process.env.FEISHU_APP_SECRET = "secret-1";

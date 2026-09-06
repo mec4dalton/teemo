@@ -71,6 +71,10 @@ npx tsx src/cmd/teemo/index.ts -prompt "docker compose up 后 web 服务访问�
     "apiKey": "$ZHIPU_API_KEY",
     "pricing": {
         "glm-4.5-air": { "inputPrice": 0.15, "outputPrice": 0.15 }
+    },
+    "feishu": {
+        "appId": "$FEISHU_APP_ID",
+        "appSecret": "$FEISHU_APP_SECRET"
     }
 }
 ```
@@ -78,9 +82,11 @@ npx tsx src/cmd/teemo/index.ts -prompt "docker compose up 后 web 服务访问�
 - `protocol` 可选 `openai` / `claude`（对应 `src/provider/` 两种协议实现，baseURL 随协议变化）
 - `apiKey` 支持 `$VAR` 语法引用环境变量（如 `$ZHIPU_API_KEY`，智谱 BigModel 平台获取），也可在用户级文件写明文
 - `pricing` 为价格表（元/百万 token），`CostTracker` 计费用
+- `feishu` 节可选，仅 agentops 入口消费：appId/appSecret 支持 `$ENV` 引用或明文；未配置时回落 `FEISHU_APP_ID`/`FEISHU_APP_SECRET` 环境变量，两者皆无则启动报错
+- agentops 的工作区固定为 `<运行目录>/feishu-workspace`，样例见 `feishu-workspace/.teemo/config.json`
 - 三层均无配置文件时启动报错，按报错列出的路径创建即可
 
-**agentops 额外**：`FEISHU_APP_ID` / `FEISHU_APP_SECRET`（飞书开发者后台获取；入站走长连接，需在开发者后台把事件订阅方式切为“使用长连接接收事件”，切换时客户端须在线）
+**agentops 飞书凭据**：优先读 config.json 的 `feishu` 节；未配置时需设置环境变量 `FEISHU_APP_ID` / `FEISHU_APP_SECRET`（飞书开发者后台获取）。入站走长连接，需在开发者后台把事件订阅方式切为“使用长连接接收事件”，切换时客户端须在线
 
 **工作区**（`-dir` 指定的目录）：
 

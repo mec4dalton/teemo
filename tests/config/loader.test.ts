@@ -213,4 +213,61 @@ describe("loadConfig", () => {
         });
         expect(cfg.apiKey).toBe("sk-plain");
     });
+
+    it("feishu 节明文两字段原样返回", async () => {
+        await writeJSON(paths.workspaceConfig, {
+            ...FULL,
+            feishu: { appId: "cli-plain", appSecret: "sec-plain" },
+        });
+        const cfg = await loadConfig({
+            workspaceConfigPath: paths.workspaceConfig,
+            homeConfigPath: paths.homeConfig,
+            env: process.env,
+        });
+        expect(cfg.feishu).toEqual({ appId: "cli-plain", appSecret: "sec-plain" });
+    });
+
+    it("feishu 节 $ENV 引用展开为真实值", async () => {
+        process.env.FEISHU_APP_ID = "cli-env";
+        process.env.FEISHU_APP_SECRET = "sec-env";
+        try {
+            await writeJSON(paths.workspaceConfig, {
+                ...FULL,
+                feishu: { appId: "$FEISHU_APP_ID", appSecret: "$FEISHU_APP_SECRET" },
+            });
+            const cfg = await loadConfig({
+                workspaceConfigPath: paths.workspaceConfig,
+                homeConfigPath: paths.homeConfig,
+                env: process.env,
+            });
+            expect(cfg.feishu).toEqual({ appId: "cli-env", appSecret: "sec-env" });
+        } finally {
+            delete process.env.FEISHU_APP_ID;
+            delete process.env.FEISHU_APP_SECRET;
+        }
+    });
+
+    it("feishu 节半配（只有 appId）守卫拒绝", async () => {
+        await writeJSON(paths.workspaceConfig, {
+            ...FULL,
+            feishu: { appId: "cli-x" },
+        });
+        await expect(
+            loadConfig({
+                workspaceConfigPath: paths.workspaceConfig,
+                homeConfigPath: paths.homeConfig,
+                env: process.env,
+            }),
+        ).rejects.toThrow(/feishu/);
+    });
+
+    it("无 feishu 节时 cfg.feishu 为 undefined（teemo/bench 无感）", async () => {
+        await writeJSON(paths.workspaceConfig, FULL);
+        const cfg = await loadConfig({
+            workspaceConfigPath: paths.workspaceConfig,
+            homeConfigPath: paths.homeConfig,
+            env: process.env,
+        });
+        expect(cfg.feishu).toBeUndefined();
+    });
 });

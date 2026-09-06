@@ -9,12 +9,18 @@ export interface Price {
     outputPrice: number;
 }
 
+export interface FeishuConfig {
+    appId: string;
+    appSecret: string;
+}
+
 export interface TeemoConfig {
     protocol: Protocol;
     baseURL: string;
     model: string;
     apiKey: string;
     pricing: Record<string, Price>;
+    feishu?: FeishuConfig;
 }
 
 const isString = (v: unknown): v is string => typeof v === "string";
@@ -30,6 +36,17 @@ const isPricing = (v: unknown): v is Record<string, Price> => {
     return entries.length > 0 && entries.every(isPrice);
 };
 
+const isFeishu = (v: unknown): v is FeishuConfig => {
+    if (typeof v !== "object" || v === null) return false;
+    const f = v as Record<string, unknown>;
+    return (
+        isString(f.appId) &&
+        f.appId !== "" &&
+        isString(f.appSecret) &&
+        f.appSecret !== ""
+    );
+};
+
 // 运行时守卫：JSON 解析结果无类型保障，加载期用守卫判完整（fail fast）
 export function isTeemoConfig(v: unknown): v is TeemoConfig {
     if (typeof v !== "object" || v === null) return false;
@@ -41,6 +58,7 @@ export function isTeemoConfig(v: unknown): v is TeemoConfig {
         isString(c.model) &&
         c.model !== "" &&
         isString(c.apiKey) &&
-        isPricing(c.pricing)
+        isPricing(c.pricing) &&
+        (c.feishu === undefined || isFeishu(c.feishu))
     );
 }

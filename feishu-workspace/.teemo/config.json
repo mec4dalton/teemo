@@ -1,0 +1,13 @@
+{
+    "protocol": "openai",
+    "baseURL": "https://open.bigmodel.cn/api/coding/paas/v4",
+    "model": "glm-5.2",
+    "apiKey": "$ZHIPU_API_KEY",
+    "pricing": {
+        "glm-5.2": { "inputPrice": 0.15, "outputPrice": 0.15 }
+    },
+    "feishu": {
+        "appId": "$FEISHU_APP_ID",
+        "appSecret": "$FEISHU_APP_SECRET"
+    }
+}
